@@ -1,6 +1,8 @@
 # Stempeluhr
 
 Persönliche Arbeitszeiterfassung als PWA (Angular 22, zoneless, Signals), optimiert für Google Pixel.
+
+**Live:** https://andreaskosl.github.io/stempeluhr/ – jeder Push auf `main` wird automatisch per GitHub Actions veröffentlicht.
 Alle Daten bleiben lokal im Browser (localStorage) – Backups als JSON exportieren.
 
 ## Funktionen
@@ -33,6 +35,7 @@ node tools/test-import.mjs   # Backup importieren, alle Seiten als Screenshot (t
 node tools/test-flow.mjs     # Stempel-Ablauf mit simulierter Uhr
 node tools/test-more.mjs     # Homeoffice-Erkennung, Backup-Roundtrip, .ics
 node tools/test-pwa.mjs      # Service Worker + Offline (vorher: npm run build; node tools/serve-dist.mjs)
+node tools/test-live.mjs     # veröffentlichte Seite inkl. Offline-Betrieb prüfen
 ```
 
 ## Auf das Handy bringen
