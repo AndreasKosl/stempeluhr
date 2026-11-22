@@ -6,7 +6,7 @@
   @for (t of tabs; track t.path) {
     <a [routerLink]="t.path" routerLinkActive="active" #rla="routerLinkActive" [attr.aria-current]="rla.isActive ? 'page' : null">
       <span class="indicator">
-        <app-icon [name]="t.icon" />
+        <app-icon [name]="t.icon" [fill]="rla.isActive" />
         @if (t.path === '/heute' && calc.runningWork()) {
           <span class="dot" [class.paused]="calc.runningPause()"></span>
         }

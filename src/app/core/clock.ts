@@ -1,10 +1,10 @@
 import { Injectable, signal } from '@angular/core';
-import { todayKey } from './date-utils';
+import { nowMs, todayKey } from './date-utils';
 
 /** Tickt jede Sekunde – Grundlage für Live-Zeiten. */
 @Injectable({ providedIn: 'root' })
 export class Clock {
-  readonly now = signal(Date.now());
+  readonly now = signal(nowMs());
   readonly today = signal(todayKey());
 
   constructor() {
@@ -13,7 +13,7 @@ export class Clock {
   }
 
   private tick() {
-    this.now.set(Date.now());
+    this.now.set(nowMs());
     const t = todayKey();
     if (t !== this.today()) this.today.set(t);
   }

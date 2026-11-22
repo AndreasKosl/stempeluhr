@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { RouterLink } from '@angular/router';
 import { Calc } from '../core/calc';
 import { Clock } from '../core/clock';
-import { addDays, eachDay, fmtClock, startOfWeek, timeToTs } from '../core/date-utils';
+import { addDays, eachDay, fmtClock, nowMs, startOfWeek, timeToTs } from '../core/date-utils';
 import { Geo } from '../core/geo';
 import { ABSENCE_LABELS, PLACE_LABELS, Place, TimeEntry } from '../core/models';
 import { Store } from '../core/store';
@@ -69,7 +69,7 @@ export class HeutePage {
     const s = this.settings();
     const a = timeToTs(this.t().key, s.lunchStart);
     const b = timeToTs(this.t().key, s.lunchEnd);
-    return this.t().entries.some((e) => e.kind === 'pause' && e.start < b && (e.end ?? Date.now()) > a);
+    return this.t().entries.some((e) => e.kind === 'pause' && e.start < b && (e.end ?? nowMs()) > a);
   });
 
   protected currentPlace = computed<Place | null>(() => this.calc.runningWork()?.place ?? this.t().place);

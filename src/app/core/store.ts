@@ -1,4 +1,5 @@
 import { Injectable, effect, signal } from '@angular/core';
+import { nowMs } from './date-utils';
 import {
   Absence,
   AppData,
@@ -53,14 +54,14 @@ export class Store {
 
   // --- Zeiteinträge ---
   addEntry(e: Omit<TimeEntry, 'id'>): TimeEntry {
-    const entry: TimeEntry = { ...e, id: uid(), updatedAt: Date.now() };
+    const entry: TimeEntry = { ...e, id: uid(), updatedAt: nowMs() };
     this.patch((d) => ({ entries: [...d.entries, entry] }));
     return entry;
   }
 
   updateEntry(id: string, changes: Partial<TimeEntry>) {
     this.patch((d) => ({
-      entries: d.entries.map((e) => (e.id === id ? { ...e, ...changes, updatedAt: Date.now() } : e)),
+      entries: d.entries.map((e) => (e.id === id ? { ...e, ...changes, updatedAt: nowMs() } : e)),
     }));
   }
 
@@ -70,7 +71,7 @@ export class Store {
 
   // --- Abwesenheiten ---
   saveAbsence(a: Omit<Absence, 'id' | 'updatedAt'> & { id?: string }) {
-    const now = Date.now();
+    const now = nowMs();
     this.patch((d) => {
       if (a.id && d.absences.some((x) => x.id === a.id)) {
         return { absences: d.absences.map((x) => (x.id === a.id ? { ...x, ...a, id: x.id, updatedAt: now } : x)) };
@@ -92,12 +93,12 @@ export class Store {
   }
 
   markCalendarAdded(id: string) {
-    const now = Date.now();
+    const now = nowMs();
     this.patch((d) => ({ absences: d.absences.map((a) => (a.id === id ? { ...a, calendarAddedAt: now } : a)) }));
   }
 
   markAbsencesSynced(map: Map<string, string>, deletedIds: string[]) {
-    const now = Date.now();
+    const now = nowMs();
     this.patch((d) => ({
       absences: d.absences.map((a) =>
         map.has(a.id) ? { ...a, googleEventId: map.get(a.id), googleSyncedAt: now } : a,

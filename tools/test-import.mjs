@@ -24,10 +24,14 @@ await shot(page, '05-jahr');
 console.log('Jahr:', (await page.locator('.card.primary').innerText()).replace(/\s+/g, ' '));
 
 await page.goto(`${BASE}/#/abwesenheiten`);
+const yearLabel = page.locator('.content > .row span.grow').first();
 for (const y of [2025, 2026, 2027]) {
-  while (Number(await page.locator('.content > .row span.grow').first().innerText()) !== y) {
-    const cur = Number(await page.locator('.content > .row span.grow').first().innerText());
+  let cur = Number(await yearLabel.innerText());
+  while (cur !== y) {
     await page.getByLabel(cur > y ? 'Vorjahr' : 'Folgejahr').click();
+    const next = cur > y ? cur - 1 : cur + 1;
+    await page.locator('.vac h2', { hasText: String(next) }).waitFor(); // erst weiter, wenn die Karte aktualisiert ist
+    cur = next;
   }
   console.log(`Urlaub ${y}:`, (await page.locator('.vac').innerText()).replace(/\s+/g, ' '));
 }

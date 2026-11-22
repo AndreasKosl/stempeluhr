@@ -1,13 +1,10 @@
 import { Injectable, inject } from '@angular/core';
 import { Calc } from './calc';
-import { fmtDuration, timeToTs, todayKey } from './date-utils';
+import { fmtDuration, nowMinute, nowMs, timeToTs, todayKey } from './date-utils';
 import { Geo } from './geo';
 import { PLACE_LABELS } from './models';
 import { Store } from './store';
 import { Ui } from './ui';
-
-/** Aktuelle Zeit auf volle Minuten abgerundet (Sekunden werden ignoriert) */
-const nowMin = () => Math.floor(Date.now() / 60_000) * 60_000;
 
 /** Stempel-Aktionen: Kommen, Pause, Gehen, Mittagspause, Uni */
 @Injectable({ providedIn: 'root' })
@@ -20,7 +17,7 @@ export class Tracking {
   async startWork() {
     if (this.calc.runningWork()) return;
     const s = this.store.data().settings;
-    const entry = this.store.addEntry({ kind: 'work', start: nowMin(), end: null, place: s.defaultPlace, placeAuto: false });
+    const entry = this.store.addEntry({ kind: 'work', start: nowMinute(), end: null, place: s.defaultPlace, placeAuto: false });
     if (!s.autoLocation) {
       this.ui.show(`Eingestempelt · ${PLACE_LABELS[s.defaultPlace]}`);
       return;
@@ -44,19 +41,19 @@ export class Tracking {
 
   pause() {
     if (!this.calc.runningWork() || this.calc.runningPause()) return;
-    this.store.addEntry({ kind: 'pause', start: nowMin(), end: null });
+    this.store.addEntry({ kind: 'pause', start: nowMinute(), end: null });
     this.ui.show('Pause gestartet');
   }
 
   resume() {
     const p = this.calc.runningPause();
     if (!p) return;
-    this.store.updateEntry(p.id, { end: nowMin() });
+    this.store.updateEntry(p.id, { end: nowMinute() });
     this.ui.show('Weiter geht’s');
   }
 
   stop() {
-    const now = nowMin();
+    const now = nowMinute();
     const p = this.calc.runningPause();
     if (p) this.store.updateEntry(p.id, { end: now });
     const w = this.calc.runningWork();
@@ -75,7 +72,7 @@ export class Tracking {
     const start = timeToTs(day, s.lunchStart);
     const end = timeToTs(day, s.lunchEnd);
     const clash = (this.calc.workByDay().get(day) ?? []).some(
-      (e) => e.kind === 'pause' && e.start < end && (e.end ?? Date.now()) > start,
+      (e) => e.kind === 'pause' && e.start < end && (e.end ?? nowMs()) > start,
     );
     if (clash) {
       this.ui.show('In diesem Zeitraum ist bereits eine Pause eingetragen');
@@ -90,14 +87,14 @@ export class Tracking {
 
   startUni(note?: string) {
     if (this.calc.runningUni()) return;
-    this.store.addEntry({ kind: 'uni', start: nowMin(), end: null, note: note || undefined });
+    this.store.addEntry({ kind: 'uni', start: nowMinute(), end: null, note: note || undefined });
     this.ui.show('Uni-Zeit läuft');
   }
 
   stopUni() {
     const u = this.calc.runningUni();
     if (!u) return;
-    this.store.updateEntry(u.id, { end: nowMin() });
+    this.store.updateEntry(u.id, { end: nowMinute() });
     this.ui.show('Uni-Zeit gestoppt');
   }
 }

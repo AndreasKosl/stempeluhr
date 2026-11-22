@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { DAY_MS, dateKey, fmtTime, timeToTs } from '../core/date-utils';
+import { addDays, dateKey, fmtTime, timeToTs, todayKey } from '../core/date-utils';
 import { EntryKind, Place, TimeEntry } from '../core/models';
 import { Store } from '../core/store';
 import { Ui } from '../core/ui';
@@ -76,7 +76,7 @@ export class EntryEditor implements OnInit {
   private ui = inject(Ui);
 
   readonly entry = input<TimeEntry | null>(null);
-  readonly day = input<string>(dateKey(Date.now()));
+  readonly day = input<string>(todayKey());
   readonly mode = input<'work' | 'uni'>('work');
   readonly defaultKind = input<EntryKind>('work');
   readonly closed = output();
@@ -120,7 +120,7 @@ export class EntryEditor implements OnInit {
     }
     const start = timeToTs(this.date(), this.from());
     let end: number | null = this.to() ? timeToTs(this.date(), this.to()) : null;
-    if (end !== null && end <= start) end += DAY_MS; // über Mitternacht
+    if (end !== null && end <= start) end = timeToTs(addDays(this.date(), 1), this.to()); // über Mitternacht
     const kind = this.kind();
     if (end === null) {
       const other = this.store.data().entries.find((x) => x.kind === kind && x.end === null && x.id !== this.entry()?.id);

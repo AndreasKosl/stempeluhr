@@ -1,5 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { addDays } from './date-utils';
+import { addDays, icsStamp, nowMs } from './date-utils';
 import { ABSENCE_LABELS, Absence } from './models';
 import { Store } from './store';
 
@@ -25,7 +25,7 @@ const esc = (s: string) => s.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace
 
 /** iCalendar-Datei; stabile UIDs sorgen dafür, dass ein erneuter Import Termine aktualisiert statt dupliziert. */
 export function buildIcs(absences: Absence[]): string {
-  const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '');
+  const stamp = icsStamp();
   const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Stempeluhr//DE', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH', 'X-WR-CALNAME:Abwesenheiten'];
   for (const a of absences) {
     lines.push(
@@ -101,7 +101,7 @@ export class GoogleCalendarSync {
   }
 
   private async accessToken(clientId: string): Promise<string> {
-    if (this.token && this.token.exp > Date.now() + 60_000) return this.token.value;
+    if (this.token && this.token.exp > nowMs() + 60_000) return this.token.value;
     await this.loadScript();
     return new Promise((resolve, reject) => {
       const client = google.accounts.oauth2.initTokenClient({
@@ -109,7 +109,7 @@ export class GoogleCalendarSync {
         scope: 'https://www.googleapis.com/auth/calendar.events',
         callback: (r) => {
           if (r.error || !r.access_token) return reject(new Error(r.error ?? 'Keine Berechtigung erhalten'));
-          this.token = { value: r.access_token, exp: Date.now() + (r.expires_in ?? 3600) * 1000 };
+          this.token = { value: r.access_token, exp: nowMs() + (r.expires_in ?? 3600) * 1000 };
           resolve(r.access_token);
         },
         error_callback: (e) => reject(new Error((e as { message?: string })?.message ?? 'Anmeldung abgebrochen')),

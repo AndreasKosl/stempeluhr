@@ -2,17 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { RouterLink } from '@angular/router';
 import { Calc, DayInfo } from '../core/calc';
 import { Clock } from '../core/clock';
-import {
-  addDays,
-  addMonths,
-  endOfMonth,
-  fmtDate,
-  fmtMonth,
-  fmtMonthShort,
-  isoWeek,
-  startOfMonth,
-  startOfWeek,
-} from '../core/date-utils';
+import { addDays, addMonths, endOfMonth, fmtDate, fmtMonth, fmtMonthShort, isoWeek, nowMs, startOfMonth, startOfWeek } from '../core/date-utils';
 import { ABSENCE_LABELS } from '../core/models';
 import { Icon } from '../shared/icon';
 import { DayPipe, DurPipe, HmPipe, NumPipe } from '../shared/pipes';
@@ -71,7 +61,7 @@ export class UebersichtPage {
 
   protected summary = computed(() => {
     // Nur bei laufendem Timer sekündlich neu berechnen
-    const now = this.calc.runningWork() ? this.clock.now() : Date.now();
+    const now = this.calc.runningWork() ? this.clock.now() : nowMs();
     const [a, b] = this.bounds();
     return this.calc.range(a, b, now);
   });

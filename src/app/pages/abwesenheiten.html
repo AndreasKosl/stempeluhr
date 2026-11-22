@@ -88,7 +88,7 @@
 
 <ng-template #row let-r>
   <div class="list-item" [class.muted]="r.past" (click)="r.absence && editing.set(r.absence)">
-    <span class="avatar" [class]="r.type"><app-icon [name]="iconOf(r.type)" [size]="20" /></span>
+    <span class="avatar" [class]="r.type"><app-icon [name]="iconOf(r.type)" [size]="20" [fill]="true" /></span>
     <span class="main">
       <span class="title">{{ r.title }}</span>
       <span class="supporting">{{ r.range }} · {{ r.days | num }} {{ r.days === 1 ? 'Tag' : 'Tage' }}{{ r.note ? ' · ' + r.note : '' }}</span>

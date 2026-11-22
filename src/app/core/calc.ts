@@ -1,6 +1,6 @@
 import { Injectable, computed, inject } from '@angular/core';
 import { Clock } from './clock';
-import { MINUTE, addDays, dateKey, eachDay, hoursToMin, weekdayIdx } from './date-utils';
+import { addDays, currentYear, dateKey, eachDay, hoursToMin, MINUTE, nowMs, weekdayIdx } from './date-utils';
 import { holidaysFor } from './holidays';
 import { ABSENCE_CREDITS, Absence, AbsenceType, Place, TimeEntry, WorkPlan } from './models';
 import { Store } from './store';
@@ -96,7 +96,7 @@ export class Calc {
   readonly runningUni = computed(() => this.store.data().entries.find((e) => e.kind === 'uni' && e.end === null) ?? null);
 
   private readonly yearRange = computed(() => {
-    const now = new Date().getFullYear();
+    const now = currentYear();
     const d = this.store.data();
     let first = now - 1;
     const ts = this.trackingStart();
@@ -146,7 +146,7 @@ export class Calc {
     return p ? hoursToMin(p.hours[weekdayIdx(key)] ?? 0) : 0;
   }
 
-  day(key: string, now = Date.now()): DayInfo {
+  day(key: string, now = nowMs()): DayInfo {
     const entries = this.workByDay().get(key) ?? [];
     const plannedMin = this.plannedMin(key);
     const holiday = this.holidays().get(key);
@@ -216,7 +216,7 @@ export class Calc {
   });
 
   /** Summen über einen Zeitraum */
-  range(a: string, b: string, now = Date.now()) {
+  range(a: string, b: string, now = nowMs()) {
     const today = this.clock.today();
     const start = this.trackingStart();
     let worked = 0;

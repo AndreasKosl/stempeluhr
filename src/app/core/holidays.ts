@@ -1,4 +1,4 @@
-import { addDays, dateKey } from './date-utils';
+import { addDays, keyOf } from './date-utils';
 
 export const STATES: { code: string; name: string }[] = [
   { code: 'BW', name: 'Baden-Württemberg' },
@@ -35,10 +35,10 @@ function easter(year: number): string {
   const m = Math.floor((a + 11 * h + 22 * l) / 451);
   const month = Math.floor((h + l - 7 * m + 114) / 31);
   const day = ((h + l - 7 * m + 114) % 31) + 1;
-  return dateKey(new Date(year, month - 1, day));
+  return keyOf(year, month, day);
 }
 
-const fixed = (y: number, m: number, d: number) => dateKey(new Date(y, m - 1, d));
+const fixed = keyOf;
 
 /** Gesetzliche Feiertage für ein Jahr und Bundesland → Map Datum → Name */
 export function holidaysFor(year: number, state: string): Map<string, string> {
@@ -70,7 +70,7 @@ export function holidaysFor(year: number, state: string): Map<string, string> {
 
 /** Mittwoch vor dem 23. November */
 function bussUndBettag(year: number): string {
-  const d = new Date(year, 10, 22);
-  while (d.getDay() !== 3) d.setDate(d.getDate() - 1);
-  return dateKey(d);
+  let d = Temporal.PlainDate.from({ year, month: 11, day: 22 });
+  while (d.dayOfWeek !== 3) d = d.subtract({ days: 1 });
+  return d.toString();
 }

@@ -1,4 +1,4 @@
-import { dateKey, fmtTime } from './date-utils';
+import { dateKey, fmtTime, isoToMs, nowMs, utcDateKey, zoned } from './date-utils';
 import { holidaysFor } from './holidays';
 import {
   Absence,
@@ -39,7 +39,7 @@ export function parseBackup(json: unknown): ImportResult {
 }
 
 export function exportBackup(data: AppData): string {
-  return JSON.stringify({ app: 'stempeluhr-pwa', exportedAt: new Date().toISOString(), data }, null, 1);
+  return JSON.stringify({ app: 'stempeluhr-pwa', exportedAt: Temporal.Now.instant().toString(), data }, null, 1);
 }
 
 // ---- Format der bisherigen Stempeluhr-App (iOS) ----
@@ -125,13 +125,13 @@ function importLegacy(b: LegacyBackup): ImportResult {
     const entry: TimeEntry = {
       id: uid(),
       kind,
-      start: Date.parse(t.startDate),
-      end: t.endDate ? Date.parse(t.endDate) : null,
+      start: safeMs(t.startDate),
+      end: t.endDate ? safeMs(t.endDate) : null,
       place: kind === 'work' ? (t.locationId ? (placeById.get(t.locationId) ?? null) : null) : undefined,
       note: t.comment ?? undefined,
-      updatedAt: Date.now(),
+      updatedAt: nowMs(),
     };
-    if (isNaN(entry.start)) continue;
+    if (isNaN(entry.start) || (entry.end !== null && isNaN(entry.end))) continue;
     data.entries.push(entry);
   }
   summary.push(`${data.entries.filter((e) => e.kind === 'work').length} Arbeitsblöcke, ${data.entries.filter((e) => e.kind === 'pause').length} Pausen`);
@@ -149,12 +149,15 @@ function importLegacy(b: LegacyBackup): ImportResult {
       const per = p.hours / (p.dayCount || 5);
       for (let i = 0; i < Math.min(p.dayCount || 5, 7); i++) hours[i] = per;
     }
-    data.plans.push({ id: uid(), validFrom: dateKey(Date.parse(p.start)), hours } satisfies WorkPlan);
+    data.plans.push({ id: uid(), validFrom: dateKey(isoToMs(p.start)), hours } satisfies WorkPlan);
     const pause = p.pauses?.[0];
     if (pause?.suggestedStart && pause.pauseInHours > 0) {
-      const s = Date.parse(pause.suggestedStart);
+      const s = isoToMs(pause.suggestedStart);
       settings.lunchStart = fmtTime(s);
-      settings.lunchEnd = fmtTime(s + pause.pauseInHours * 3_600_000);
+      settings.lunchEnd = zoned(s)
+        .add({ minutes: Math.round(pause.pauseInHours * 60) })
+        .toPlainTime()
+        .toString({ smallestUnit: 'minute' });
     }
   }
   summary.push(`${data.plans.length} Arbeitsplan`);
@@ -173,7 +176,7 @@ function importLegacy(b: LegacyBackup): ImportResult {
     if (info?.isHoliday) return 'feiertag';
     return 'sonderurlaub';
   };
-  const toKey = (iso: string, utc: boolean) => (utc ? iso.slice(0, 10) : dateKey(Date.parse(iso)));
+  const toKey = (iso: string, utc: boolean) => (utc ? utcDateKey(iso) : dateKey(isoToMs(iso)));
   const legalCache = new Map<number, Map<string, string>>();
   const isLegal = (k: string) => {
     const y = Number(k.slice(0, 4));
@@ -197,7 +200,7 @@ function importLegacy(b: LegacyBackup): ImportResult {
       start,
       end: end < start ? start : end,
       note: a.name ?? (type === 'feiertag' ? holidayName(start) : undefined),
-      updatedAt: Date.now(),
+      updatedAt: nowMs(),
     } satisfies Absence);
   }
   summary.push(`${data.absences.length} Abwesenheiten (${skipped} gesetzliche Feiertage werden automatisch berechnet)`);
@@ -211,11 +214,20 @@ function importLegacy(b: LegacyBackup): ImportResult {
     const date = o.date ?? o.start;
     const minutes = o.minutes ?? (o.hours != null ? o.hours * 60 : o.value != null ? o.value * 60 : null);
     if (!date || minutes == null) continue;
-    data.adjustments.push({ id: uid(), date: dateKey(Date.parse(date)), minutes: Math.round(minutes), note: o.comment ?? 'Import' });
+    data.adjustments.push({ id: uid(), date: dateKey(isoToMs(date)), minutes: Math.round(minutes), note: o.comment ?? 'Import' });
   }
 
   data.settings = settings;
   return { data, format: 'stempeluhr-ios', summary };
+}
+
+/** ISO-Zeitstempel → Epoch-ms, NaN bei ungültigem Wert */
+function safeMs(iso: string): number {
+  try {
+    return isoToMs(iso);
+  } catch {
+    return NaN;
+  }
 }
 
 function holidayName(k: string): string {

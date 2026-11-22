@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, signal } f
 import { Router } from '@angular/router';
 import { Calc } from '../core/calc';
 import { Clock } from '../core/clock';
-import { addDays } from '../core/date-utils';
+import { addDays, nowMs } from '../core/date-utils';
 import { ABSENCE_LABELS, Absence, EntryKind, PLACE_LABELS, Place, TimeEntry } from '../core/models';
 import { Store } from '../core/store';
 import { Tracking } from '../core/tracking';
@@ -41,7 +41,7 @@ import { DayPipe, DurPipe, HmPipe } from '../shared/pipes';
 
       @if (d().holiday) {
         <div class="card row nowrap">
-          <span class="avatar feiertag"><app-icon name="star" [size]="20" /></span>
+          <span class="avatar feiertag"><app-icon name="star" [size]="20" [fill]="true" /></span>
           <span class="grow">{{ d().holiday }}</span>
           @if (holidayAbsence(); as ha) {
             <button class="btn text" type="button" (click)="absenceEditing.set(ha)">Bearbeiten</button>
@@ -49,7 +49,7 @@ import { DayPipe, DurPipe, HmPipe } from '../shared/pipes';
         </div>
       } @else if (d().absence; as a) {
         <button class="card row nowrap absence" type="button" (click)="absenceEditing.set(a)">
-          <span class="avatar" [class]="a.type"><app-icon name="event" [size]="20" /></span>
+          <span class="avatar" [class]="a.type"><app-icon name="event" [size]="20" [fill]="true" /></span>
           <span class="grow">
             {{ absenceLabels[a.type] }}{{ a.halfDay ? ' (halber Tag)' : '' }}
             <span class="muted-text block">{{ a.start | day }}{{ a.end !== a.start ? ' – ' + (a.end | day) : '' }}{{ a.note ? ' · ' + a.note : '' }}</span>
@@ -78,7 +78,7 @@ import { DayPipe, DurPipe, HmPipe } from '../shared/pipes';
           @for (e of d().entries; track e.id) {
             <button class="list-item" type="button" (click)="open(e)">
               <span class="avatar" [class]="e.kind">
-                <app-icon [name]="e.kind === 'pause' ? 'lunch' : e.place === 'buero' ? 'office' : 'home'" [size]="20" />
+                <app-icon [name]="e.kind === 'pause' ? 'lunch' : e.place === 'buero' ? 'office' : 'home'" [size]="20" [fill]="true" />
               </span>
               <span class="main">
                 <span class="title num">{{ e.start | hm }} – {{ e.end ? (e.end | hm) : 'läuft' }}</span>
@@ -149,7 +149,7 @@ export class TagPage {
   protected d = computed(() => {
     const k = this.key();
     const running = k === this.clock.today() && !!this.calc.runningWork();
-    return this.calc.day(k, running ? this.clock.now() : Date.now());
+    return this.calc.day(k, running ? this.clock.now() : nowMs());
   });
   protected hasWork = computed(() => this.d().entries.some((e) => e.kind === 'work'));
   protected holidayAbsence = computed(

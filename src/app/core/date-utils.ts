@@ -1,71 +1,87 @@
+/**
+ * Datums- und Zeitfunktionen auf Basis der nativen Temporal-API (kein Polyfill).
+ *
+ * Konventionen in der App:
+ * - Kalendertage werden als ISO-String `YYYY-MM-DD` gespeichert (= `Temporal.PlainDate.toString()`).
+ * - Zeitpunkte von Einträgen werden als Epoch-Millisekunden gespeichert (= `Temporal.Instant.epochMilliseconds`).
+ * - Umrechnung zwischen beiden erfolgt immer in der Zeitzone des Geräts.
+ */
+
+const LOCALE = 'de-DE';
+
+/** Millisekunden pro Minute (für Dauer-Arithmetik auf Epoch-ms) */
 export const MINUTE = 60_000;
-export const HOUR = 3_600_000;
-export const DAY_MS = 86_400_000;
 
-const pad = (n: number) => String(n).padStart(2, '0');
+/** Zeitzone des Geräts, z. B. "Europe/Berlin" */
+export const timeZone = (): string => Temporal.Now.timeZoneId();
 
-/** Lokales Datum als YYYY-MM-DD */
-export function dateKey(d: Date | number): string {
-  const x = new Date(d);
-  return `${x.getFullYear()}-${pad(x.getMonth() + 1)}-${pad(x.getDate())}`;
-}
+/** Aktueller Zeitpunkt in Epoch-Millisekunden */
+export const nowMs = (): number => Temporal.Now.instant().epochMilliseconds;
 
-export function todayKey(): string {
-  return dateKey(Date.now());
-}
+/** Aktueller Zeitpunkt, auf volle Minuten abgerundet (Sekunden werden beim Stempeln ignoriert) */
+export const nowMinute = (): number =>
+  Temporal.Now.zonedDateTimeISO().round({ smallestUnit: 'minute', roundingMode: 'floor' }).epochMilliseconds;
 
-export function parseKey(k: string): Date {
-  const [y, m, d] = k.split('-').map(Number);
-  return new Date(y, m - 1, d);
-}
+export const plainDate = (k: string): Temporal.PlainDate => Temporal.PlainDate.from(k);
 
-export function addDays(k: string, n: number): string {
-  const d = parseKey(k);
-  d.setDate(d.getDate() + n);
-  return dateKey(d);
-}
+/** Epoch-ms → Zeitpunkt in der Gerätezeitzone */
+export const zoned = (ms: number): Temporal.ZonedDateTime =>
+  Temporal.Instant.fromEpochMilliseconds(ms).toZonedDateTimeISO(timeZone());
 
-export function addMonths(k: string, n: number): string {
-  const d = parseKey(k);
-  return dateKey(new Date(d.getFullYear(), d.getMonth() + n, 1));
-}
+/** ISO-Zeitstempel (z. B. "2025-01-02T07:53:00.000Z") → Epoch-ms */
+export const isoToMs = (iso: string): number => Temporal.Instant.from(iso).epochMilliseconds;
+
+/** Lokaler Kalendertag eines Zeitpunkts als YYYY-MM-DD */
+export const dateKey = (ms: number): string => zoned(ms).toPlainDate().toString();
+
+/** Kalendertag eines ISO-Zeitstempels in UTC (für Ganztagesdaten aus Fremd-Backups) */
+export const utcDateKey = (iso: string): string => Temporal.Instant.from(iso).toZonedDateTimeISO('UTC').toPlainDate().toString();
+
+export const todayKey = (): string => Temporal.Now.plainDateISO().toString();
+
+export const currentYear = (): number => Temporal.Now.plainDateISO().year;
+
+export const keyOf = (year: number, month: number, day: number): string =>
+  Temporal.PlainDate.from({ year, month, day }).toString();
+
+export const addDays = (k: string, days: number): string => plainDate(k).add({ days }).toString();
+
+/** Erster Tag des um n Monate verschobenen Monats */
+export const addMonths = (k: string, months: number): string => plainDate(k).with({ day: 1 }).add({ months }).toString();
 
 /** 0 = Montag … 6 = Sonntag */
-export function weekdayIdx(k: string): number {
-  return (parseKey(k).getDay() + 6) % 7;
-}
+export const weekdayIdx = (k: string): number => plainDate(k).dayOfWeek - 1;
 
-export function startOfWeek(k: string): string {
-  return addDays(k, -weekdayIdx(k));
-}
+export const startOfWeek = (k: string): string => addDays(k, -weekdayIdx(k));
 
-export function startOfMonth(k: string): string {
-  return k.slice(0, 8) + '01';
-}
+export const startOfMonth = (k: string): string => plainDate(k).with({ day: 1 }).toString();
 
-export function endOfMonth(k: string): string {
-  const d = parseKey(k);
-  return dateKey(new Date(d.getFullYear(), d.getMonth() + 1, 0));
-}
+export const endOfMonth = (k: string): string => {
+  const d = plainDate(k);
+  return d.with({ day: d.daysInMonth }).toString();
+};
 
 /** Alle Tage von a bis b (inklusive) */
 export function eachDay(a: string, b: string): string[] {
   const out: string[] = [];
-  for (let k = a; k <= b; k = addDays(k, 1)) out.push(k);
+  const end = plainDate(b);
+  for (let d = plainDate(a); Temporal.PlainDate.compare(d, end) <= 0; d = d.add({ days: 1 })) out.push(d.toString());
   return out;
 }
 
 /** ISO-Kalenderwoche */
-export function isoWeek(k: string): number {
-  const d = parseKey(k);
-  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-  const day = t.getUTCDay() || 7;
-  t.setUTCDate(t.getUTCDate() + 4 - day);
-  const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
-  return Math.ceil(((t.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
-}
+export const isoWeek = (k: string): number => plainDate(k).weekOfYear ?? 0;
 
-/** Minuten → "7:05" bzw. "-0:15" / "+1:30" */
+/** Datum + "HH:MM" → Epoch-ms (Gerätezeitzone, sommerzeitsicher) */
+export const timeToTs = (k: string, hhmm: string): number =>
+  plainDate(k).toZonedDateTime({ timeZone: timeZone(), plainTime: Temporal.PlainTime.from(hhmm) }).epochMilliseconds;
+
+/** Epoch-ms → "08:15" */
+export const fmtTime = (ms: number): string => zoned(ms).toPlainTime().toString({ smallestUnit: 'minute' });
+
+const pad = (n: number) => String(n).padStart(2, '0');
+
+/** Minuten → "7:05" bzw. "−0:15" / "+1:30" */
 export function fmtDuration(min: number, withSign = false): string {
   const neg = min < 0;
   const abs = Math.round(Math.abs(min));
@@ -76,45 +92,33 @@ export function fmtDuration(min: number, withSign = false): string {
 
 /** Millisekunden → "7:05:12" */
 export function fmtClock(ms: number): string {
-  const total = Math.max(0, Math.floor(ms / 1000));
-  return `${Math.floor(total / 3600)}:${pad(Math.floor((total % 3600) / 60))}:${pad(total % 60)}`;
+  const d = Temporal.Duration.from({ milliseconds: Math.max(0, Math.floor(ms)) }).round({
+    largestUnit: 'hour',
+    smallestUnit: 'second',
+    roundingMode: 'trunc',
+  });
+  return `${d.hours}:${pad(d.minutes)}:${pad(d.seconds)}`;
 }
 
-export function fmtTime(ts: number): string {
-  const d = new Date(ts);
-  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
+const fmt = (k: string, o: Intl.DateTimeFormatOptions) => plainDate(k).toLocaleString(LOCALE, o);
 
-/** Datum + "HH:MM" → Epoch-ms (lokal) */
-export function timeToTs(k: string, hhmm: string): number {
-  const d = parseKey(k);
-  const [h, m] = hhmm.split(':').map(Number);
-  d.setHours(h, m, 0, 0);
-  return d.getTime();
-}
-
-const longFmt = new Intl.DateTimeFormat('de-DE', { weekday: 'long', day: 'numeric', month: 'long' });
-const shortFmt = new Intl.DateTimeFormat('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' });
-const dateFmt = new Intl.DateTimeFormat('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
-const monthFmt = new Intl.DateTimeFormat('de-DE', { month: 'long', year: 'numeric' });
-const monthShortFmt = new Intl.DateTimeFormat('de-DE', { month: 'short' });
-const wdFmt = new Intl.DateTimeFormat('de-DE', { weekday: 'short' });
-
-export const fmtDateLong = (k: string) => longFmt.format(parseKey(k));
-export const fmtDateShort = (k: string) => shortFmt.format(parseKey(k));
-export const fmtDate = (k: string) => dateFmt.format(parseKey(k));
-export const fmtMonth = (k: string) => monthFmt.format(parseKey(k));
-export const fmtMonthShort = (k: string) => monthShortFmt.format(parseKey(k));
-export const fmtWeekday = (k: string) => wdFmt.format(parseKey(k)).replace('.', '');
+export const fmtDateLong = (k: string) => fmt(k, { weekday: 'long', day: 'numeric', month: 'long' });
+export const fmtDateShort = (k: string) => fmt(k, { weekday: 'short', day: '2-digit', month: '2-digit' });
+export const fmtDate = (k: string) => fmt(k, { day: '2-digit', month: '2-digit', year: 'numeric' });
+export const fmtMonth = (k: string) => fmt(k, { month: 'long', year: 'numeric' });
+export const fmtMonthShort = (k: string) => fmt(k, { month: 'short' });
+export const fmtWeekday = (k: string) => fmt(k, { weekday: 'short' }).replace('.', '');
 
 export function fmtRange(a: string, b: string): string {
   if (a === b) return fmtDate(a);
   return `${fmtDate(a).slice(0, 6)} – ${fmtDate(b)}`;
 }
 
-export function hoursToMin(h: number): number {
-  return Math.round(h * 60);
-}
+/** iCalendar-Zeitstempel in UTC, z. B. "20261122T204655Z" */
+export const icsStamp = (): string =>
+  Temporal.Now.instant().toString({ smallestUnit: 'second' }).replace(/[-:]/g, '');
+
+export const hoursToMin = (h: number): number => Math.round(h * 60);
 
 /** "1:30" / "-0:45" / "1,5" → Minuten */
 export function parseDuration(s: string): number | null {

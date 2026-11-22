@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { FormsModule } from '@angular/forms';
 import { Calc, uniMinutes } from '../core/calc';
 import { Clock } from '../core/clock';
-import { addDays, dateKey, fmtClock, startOfMonth, startOfWeek, timeToTs } from '../core/date-utils';
+import { addDays, dateKey, fmtClock, nowMs, startOfMonth, startOfWeek, timeToTs } from '../core/date-utils';
 import { TimeEntry } from '../core/models';
 import { Tracking } from '../core/tracking';
 import { EntryEditor } from '../shared/entry-editor';
@@ -34,7 +34,7 @@ export class UniPage {
   protected editing = signal<TimeEntry | null | undefined>(undefined);
   protected limit = signal(30);
 
-  private now = computed(() => (this.calc.runningUni() ? this.clock.now() : Date.now()));
+  private now = computed(() => (this.calc.runningUni() ? this.clock.now() : nowMs()));
   protected semester = computed(() => semesterOf(this.clock.today()));
 
   protected subjects = computed(() => {

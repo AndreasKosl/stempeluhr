@@ -28,6 +28,8 @@ jobs:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
       # Seite liegt unter https://<user>.github.io/<repo>/
       - run: npx ng build --base-href "/${{ github.event.repository.name }}/"
+      # Lizenzen der gebündelten Pakete mit ausliefern (Link in den Einstellungen)
+      - run: cp dist/stempeluhr/3rdpartylicenses.txt dist/stempeluhr/browser/
       - uses: actions/upload-pages-artifact@v5
         with:
           path: dist/stempeluhr/browser

@@ -127,7 +127,7 @@
     <div class="list">
       @for (e of entries(); track e.id) {
         <button class="list-item" type="button" (click)="editing.set(e)">
-          <span class="avatar" [class]="e.kind"><app-icon [name]="e.kind === 'pause' ? 'lunch' : e.place === 'buero' ? 'office' : 'home'" [size]="20" /></span>
+          <span class="avatar" [class]="e.kind"><app-icon [name]="e.kind === 'pause' ? 'lunch' : e.place === 'buero' ? 'office' : 'home'" [size]="20" [fill]="true" /></span>
           <span class="main">
             <span class="title num">{{ e.start | hm }} – {{ e.end ? (e.end | hm) : 'läuft' }}</span>
             <span class="supporting">

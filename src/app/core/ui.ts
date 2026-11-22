@@ -1,4 +1,5 @@
 import { Injectable, signal } from '@angular/core';
+import { nowMs } from './date-utils';
 
 export interface Toast {
   id: number;
@@ -23,7 +24,7 @@ export class Ui {
 
   show(text: string, action?: Toast['action'], ms = 4000) {
     clearTimeout(this.timer);
-    const t = { id: Date.now(), text, action };
+    const t = { id: nowMs(), text, action };
     this.toast.set(t);
     this.timer = setTimeout(() => this.toast.set(null), ms);
   }

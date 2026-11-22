@@ -8,7 +8,7 @@
   <div class="list">
     @for (p of plans(); track p.id) {
       <button class="list-item" type="button" (click)="planEdit.set({ id: p.id, validFrom: p.validFrom, hours: [...p.hours] })">
-        <span class="avatar"><app-icon name="plan" [size]="20" /></span>
+        <span class="avatar"><app-icon name="plan" [size]="20" [fill]="true" /></span>
         <span class="main">
           <span class="title">{{ planTotal(p) | num }} h / Woche</span>
           <span class="supporting">ab {{ p.validFrom | day }} · {{ planDays(p) }}</span>
@@ -107,7 +107,7 @@
   <div class="list">
     @for (o of s().offices; track o.id) {
       <button class="list-item" type="button" (click)="officeEdit.set({ ...o })">
-        <span class="avatar"><app-icon name="office" [size]="20" /></span>
+        <span class="avatar"><app-icon name="office" [size]="20" [fill]="true" /></span>
         <span class="main">
           <span class="title">{{ o.name }}</span>
           <span class="supporting num">{{ o.lat.toFixed(5) }}, {{ o.lon.toFixed(5) }} · {{ o.radius }} m</span>
@@ -181,7 +181,9 @@
     <button class="btn danger block" type="button" (click)="resetAll()"><app-icon name="delete" [size]="18" /> Alle Daten löschen</button>
   </div>
 
-  <p class="muted-text small center">Stempeluhr {{ version }}</p>
+  <p class="muted-text small center">
+    Stempeluhr {{ version }} · <a href="3rdpartylicenses.txt" target="_blank" rel="noopener">Open-Source-Lizenzen</a>
+  </p>
 </div>
 
 <!-- Sheets -->

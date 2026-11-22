@@ -58,7 +58,7 @@
     <div class="list">
       @for (e of g.entries; track e.id) {
         <button class="list-item" type="button" (click)="editing.set(e)">
-          <span class="avatar uni"><app-icon name="school" [size]="20" /></span>
+          <span class="avatar uni"><app-icon name="school" [size]="20" [fill]="true" /></span>
           <span class="main">
             <span class="title num">{{ e.start | hm }} – {{ e.end ? (e.end | hm) : 'läuft' }}</span>
             <span class="supporting">{{ e.note || 'Ohne Fach' }}</span>

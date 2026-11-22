@@ -28,6 +28,10 @@ npm start          # Dev-Server auf http://localhost:4200
 npm run build      # Produktions-Build nach dist/stempeluhr/browser
 ```
 
+Technik: Datum und Uhrzeit laufen komplett über die native **Temporal-API** (kein Polyfill, siehe `src/app/core/date-utils.ts`),
+Icons kommen aus dem offiziellen Paket **@lucide/angular** – die Lizenzen aller gebündelten Pakete landen beim Build in
+`3rdpartylicenses.txt` und sind in der App unter *Mehr → Open-Source-Lizenzen* verlinkt.
+
 Es gibt bewusst keine Unit-Tests. Getestet wird per Playwright mit Pixel-Emulation (nutzt das installierte Chrome):
 
 ```powershell
