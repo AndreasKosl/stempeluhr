@@ -1,0 +1,129 @@
+<header class="topbar">
+  <h1>Übersicht</h1>
+  <button class="btn text" type="button" (click)="anchor.set(calc.today().key)">Heute</button>
+</header>
+
+<div class="content">
+  <div class="segmented">
+    <button type="button" [class.on]="mode() === 'woche'" (click)="setMode('woche')">Woche</button>
+    <button type="button" [class.on]="mode() === 'monat'" (click)="setMode('monat')">Monat</button>
+    <button type="button" [class.on]="mode() === 'jahr'" (click)="setMode('jahr')">Jahr</button>
+  </div>
+
+  <div class="row nowrap nav">
+    <button class="icon-btn" type="button" (click)="move(-1)" aria-label="Zurück"><app-icon name="chevron_left" /></button>
+    <span class="grow nav-title">{{ title() }}</span>
+    <button class="icon-btn" type="button" (click)="move(1)" aria-label="Weiter"><app-icon name="chevron_right" /></button>
+  </div>
+
+  <section class="card primary">
+    <div class="stats">
+      <div class="stat">
+        <span class="label">Ist</span>
+        <span class="value">{{ summary().worked | dur }}</span>
+      </div>
+      <div class="stat">
+        <span class="label">Soll</span>
+        <span class="value">{{ summary().target | dur }}</span>
+      </div>
+      <div class="stat">
+        <span class="label">Differenz</span>
+        <span class="value">{{ summary().diff | dur: true }}</span>
+      </div>
+    </div>
+    <div class="meta row">
+      <span class="badge"><app-icon name="office" [size]="14" /> {{ summary().buero }} Büro</span>
+      <span class="badge"><app-icon name="home" [size]="14" /> {{ summary().ho }} Homeoffice</span>
+      <span class="spacer"></span>
+      <span class="saldo">Saldo <b [class.pos]="calc.overtimeLive() > 0" [class.neg]="calc.overtimeLive() < 0">{{ calc.overtimeLive() | dur: true }}</b></span>
+    </div>
+  </section>
+
+  @if (mode() === 'jahr') {
+    <section class="card">
+      <h2>Abwesenheiten {{ anchor().slice(0, 4) }}</h2>
+      <div class="stats four">
+        <div class="stat">
+          <span class="label">Urlaub</span>
+          <span class="value">{{ yearAbsences().urlaub.taken | num }}</span>
+          @if (yearAbsences().urlaub.planned) {
+            <span class="label">+{{ yearAbsences().urlaub.planned | num }} geplant</span>
+          }
+        </div>
+        <div class="stat">
+          <span class="label">Krank</span>
+          <span class="value">{{ yearAbsences().krank.taken | num }}</span>
+        </div>
+        <div class="stat">
+          <span class="label">Sonder</span>
+          <span class="value">{{ yearAbsences().sonder.taken | num }}</span>
+        </div>
+        <div class="stat">
+          <span class="label">Abbau</span>
+          <span class="value">{{ yearAbsences().abbau.taken | num }}</span>
+        </div>
+      </div>
+      <p class="muted-text hint">Homeoffice-Tage zählen für die Homeoffice-Pauschale (max. 210 Tage/Jahr).</p>
+    </section>
+
+    <div class="list">
+      @for (m of months(); track m.key) {
+        <button class="list-item" type="button" (click)="openMonth(m.key)">
+          <span class="main">
+            <span class="title">{{ m.label }}</span>
+            <span class="supporting">{{ m.buero }} Büro · {{ m.ho }} HO · Soll {{ m.target | dur }}</span>
+          </span>
+          <span class="trailing">
+            <span>{{ m.worked | dur }}</span>
+            <span class="diff" [class.pos]="m.diff > 0" [class.neg]="m.diff < 0">{{ m.diff | dur: true }}</span>
+          </span>
+        </button>
+      } @empty {
+        <p class="empty">Keine Daten</p>
+      }
+    </div>
+  } @else {
+    @for (w of weeks(); track w.kw) {
+      @if (mode() === 'monat') {
+        <div class="row week-head">
+          <span class="grow">KW {{ w.kw }}</span>
+          <span class="num">{{ w.worked | dur }}</span>
+          <span class="num diff" [class.pos]="w.diff > 0" [class.neg]="w.diff < 0">{{ w.diff | dur: true }}</span>
+        </div>
+      }
+      <div class="list">
+        @for (d of w.days; track d.key) {
+          <a class="list-item day" [routerLink]="['/tag', d.key]" [class.muted]="isOff(d) || d.isFuture" [class.today]="d.key === calc.today().key">
+            <span class="date">
+              <span class="wd">{{ d.key | day: 'wd' }}</span>
+              <span class="dn">{{ d.key.slice(8) }}</span>
+            </span>
+            <span class="main">
+              <span class="title num">
+                @if (d.first) {
+                  {{ d.first | hm }} – {{ d.running ? 'läuft' : (d.last | hm) }}
+                } @else if (!d.absenceType) {
+                  <span class="muted-text">{{ d.plannedMin ? '–' : 'frei' }}</span>
+                }
+              </span>
+              <span class="row tags">
+                @if (d.place) {
+                  <span class="badge"><app-icon [name]="d.place === 'buero' ? 'office' : 'home'" [size]="12" />{{ d.place === 'buero' ? 'Büro' : 'HO' }}</span>
+                }
+                @if (d.absenceType; as at) {
+                  <span class="badge" [class]="at">{{ d.holiday ?? absenceLabels[at] }}{{ d.absence?.halfDay ? ' ½' : '' }}</span>
+                }
+              </span>
+            </span>
+            <span class="trailing">
+              <span>{{ d.workedMin ? (d.workedMin | dur) : '' }}</span>
+              @if (!d.isFuture && (d.targetMin || d.workedMin)) {
+                <span class="diff" [class.pos]="d.diffMin > 0" [class.neg]="d.diffMin < 0">{{ d.diffMin | dur: true }}</span>
+              }
+            </span>
+          </a>
+        }
+      </div>
+    }
+  }
+</div>

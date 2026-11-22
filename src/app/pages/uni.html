@@ -1,0 +1,82 @@
+<header class="topbar">
+  <h1>Uni<span class="sub">Lernzeit – getrennt von der Arbeitszeit</span></h1>
+</header>
+
+<div class="content">
+  <section class="card tertiary hero">
+    @if (calc.runningUni(); as r) {
+      <span class="state">Läuft seit {{ r.start | hm }}{{ r.note ? ' · ' + r.note : '' }}</span>
+      <span class="clock num">{{ liveClock() }}</span>
+      <button class="btn big block stop" type="button" (click)="track.stopUni()"><app-icon name="stop" /> Stoppen</button>
+    } @else {
+      <span class="state">Bereit zum Lernen</span>
+      <span class="clock num">{{ stats().today | dur }} <small>heute</small></span>
+      <div class="field">
+        <label for="uni-subject">Fach / Thema (optional)</label>
+        <input id="uni-subject" type="text" list="uni-subj" [(ngModel)]="subject" placeholder="z. B. Mathe II" />
+        <datalist id="uni-subj">
+          @for (s of subjects(); track s) {
+            <option [value]="s"></option>
+          }
+        </datalist>
+      </div>
+      <button class="btn big block go" type="button" (click)="start()"><app-icon name="play" /> Lernzeit starten</button>
+    }
+  </section>
+
+  <div class="stats grid">
+    <div class="card stat"><span class="label">Heute</span><span class="value">{{ stats().today | dur }}</span></div>
+    <div class="card stat"><span class="label">Woche</span><span class="value">{{ stats().week | dur }}</span></div>
+    <div class="card stat"><span class="label">Monat</span><span class="value">{{ stats().month | dur }}</span></div>
+  </div>
+  <div class="stats two">
+    <div class="card stat"><span class="label">{{ semester().label }}</span><span class="value">{{ stats().semester | dur }}</span></div>
+    <div class="card stat"><span class="label">Gesamt</span><span class="value">{{ stats().total | dur }}</span></div>
+  </div>
+
+  @if (bySubject().length) {
+    <h3 class="section-title">Fächer im {{ semester().label }}</h3>
+    <div class="card subjects">
+      @for (s of bySubject(); track s.name) {
+        <div class="subj">
+          <div class="row nowrap">
+            <span class="grow">{{ s.name }}</span>
+            <span class="num">{{ s.min | dur }} h</span>
+          </div>
+          <div class="progress"><div [style.width.%]="s.pct"></div></div>
+        </div>
+      }
+    </div>
+  }
+
+  <h3 class="section-title">Verlauf</h3>
+  @for (g of groups(); track g.key) {
+    <div class="row day-head">
+      <span class="grow">{{ g.key | day: 'long' }}</span>
+      <span class="num">{{ g.total | dur }}</span>
+    </div>
+    <div class="list">
+      @for (e of g.entries; track e.id) {
+        <button class="list-item" type="button" (click)="editing.set(e)">
+          <span class="avatar uni"><app-icon name="school" [size]="20" /></span>
+          <span class="main">
+            <span class="title num">{{ e.start | hm }} – {{ e.end ? (e.end | hm) : 'läuft' }}</span>
+            <span class="supporting">{{ e.note || 'Ohne Fach' }}</span>
+          </span>
+          <span class="trailing num">{{ minutes(e) | dur }}</span>
+        </button>
+      }
+    </div>
+  } @empty {
+    <p class="empty">Noch keine Lernzeiten erfasst.</p>
+  }
+  @if (calc.uniEntries().length > limit()) {
+    <button class="btn text" type="button" (click)="limit.set(limit() + 50)">Mehr anzeigen</button>
+  }
+</div>
+
+<button class="fab uni-fab" type="button" (click)="editing.set(null)"><app-icon name="add" /> Nachtragen</button>
+
+@if (editing() !== undefined) {
+  <app-entry-editor mode="uni" [entry]="editing() ?? null" [day]="calc.today().key" (closed)="editing.set(undefined)" />
+}

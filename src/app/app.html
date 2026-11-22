@@ -1,0 +1,41 @@
+<main>
+  <router-outlet />
+</main>
+
+<nav class="navbar" aria-label="Hauptnavigation">
+  @for (t of tabs; track t.path) {
+    <a [routerLink]="t.path" routerLinkActive="active" #rla="routerLinkActive" [attr.aria-current]="rla.isActive ? 'page' : null">
+      <span class="indicator">
+        <app-icon [name]="t.icon" />
+        @if (t.path === '/heute' && calc.runningWork()) {
+          <span class="dot" [class.paused]="calc.runningPause()"></span>
+        }
+        @if (t.path === '/uni' && calc.runningUni()) {
+          <span class="dot uni"></span>
+        }
+      </span>
+      <span class="label">{{ t.label }}</span>
+    </a>
+  }
+</nav>
+
+@if (ui.toast(); as t) {
+  <div class="snackbar" role="status">
+    <span>{{ t.text }}</span>
+    @if (t.action) {
+      <button type="button" (click)="t.action.run(); ui.toast.set(null)">{{ t.action.label }}</button>
+    }
+  </div>
+}
+
+@if (ui.confirmReq(); as c) {
+  <app-sheet [title]="c.title" (closed)="ui.answer(false)">
+    @if (c.text) {
+      <p class="muted-text" style="margin: 0">{{ c.text }}</p>
+    }
+    <ng-container actions>
+      <button class="btn text" type="button" (click)="ui.answer(false)">Abbrechen</button>
+      <button class="btn" [class.danger]="c.danger" type="button" (click)="ui.answer(true)">{{ c.ok }}</button>
+    </ng-container>
+  </app-sheet>
+}

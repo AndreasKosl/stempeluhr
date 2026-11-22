@@ -1,0 +1,173 @@
+.hero {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px 16px;
+  border-radius: var(--radius-l);
+  --ring: var(--primary);
+  &.work {
+    --ring: var(--work);
+  }
+  &.pause {
+    --ring: var(--pause);
+  }
+  .stats {
+    text-align: center;
+    .stat {
+      align-items: center;
+    }
+  }
+}
+
+.center {
+  justify-content: center;
+}
+
+.ring {
+  position: relative;
+  width: min(240px, 70vw);
+  aspect-ratio: 1;
+  margin: 0 auto;
+  svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+  }
+  circle {
+    fill: none;
+    stroke-width: 14;
+  }
+  .track {
+    stroke: var(--surface-highest);
+  }
+  .bar {
+    stroke: var(--ring);
+    stroke-linecap: round;
+    transition: stroke-dasharray 0.6s;
+  }
+  .center-text {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    text-align: center;
+  }
+  .state {
+    font-size: 13px;
+    color: var(--on-surface-variant);
+  }
+  .clock {
+    font-size: 44px;
+    font-weight: 400;
+    letter-spacing: -1px;
+  }
+  .target {
+    font-size: 13px;
+    color: var(--on-surface-variant);
+  }
+}
+
+.place-row {
+  gap: 4px;
+  .small {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+.spin {
+  animation: pulse 1s infinite;
+}
+@keyframes pulse {
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  .start {
+    background: var(--work);
+    color: var(--surface);
+  }
+  .stop {
+    background: var(--error);
+    color: var(--surface);
+  }
+}
+
+.lunch:disabled {
+  opacity: 0.6;
+}
+
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-decoration: none;
+  color: inherit;
+  .label {
+    font-size: 12px;
+    color: var(--on-surface-variant);
+  }
+  .value {
+    font-size: 24px;
+  }
+}
+
+.week {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  padding: 12px;
+  .col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    text-decoration: none;
+    color: var(--on-surface-variant);
+    font-size: 12px;
+  }
+  .col.today {
+    color: var(--primary);
+    font-weight: 600;
+  }
+  .bars {
+    position: relative;
+    width: 100%;
+    max-width: 28px;
+    height: 72px;
+  }
+  .plan,
+  .done {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    border-radius: 6px;
+  }
+  .plan {
+    background: var(--surface-highest);
+  }
+  .done {
+    background: var(--work);
+    &.urlaub,
+    &.sonderurlaub {
+      background: var(--tertiary);
+    }
+    &.krank {
+      background: var(--error);
+    }
+    &.feiertag {
+      background: var(--primary);
+    }
+  }
+  .ic {
+    height: 14px;
+  }
+}

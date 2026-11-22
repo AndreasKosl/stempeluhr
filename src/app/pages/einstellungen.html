@@ -1,0 +1,269 @@
+<header class="topbar">
+  <h1>Einstellungen</h1>
+</header>
+
+<div class="content">
+  <!-- Arbeitsplan -->
+  <h3 class="section-title">Arbeitsplan</h3>
+  <div class="list">
+    @for (p of plans(); track p.id) {
+      <button class="list-item" type="button" (click)="planEdit.set({ id: p.id, validFrom: p.validFrom, hours: [...p.hours] })">
+        <span class="avatar"><app-icon name="plan" [size]="20" /></span>
+        <span class="main">
+          <span class="title">{{ planTotal(p) | num }} h / Woche</span>
+          <span class="supporting">ab {{ p.validFrom | day }} · {{ planDays(p) }}</span>
+        </span>
+        <app-icon name="chevron_right" />
+      </button>
+    } @empty {
+      <p class="empty">Noch kein Arbeitsplan – ohne Plan gibt es keine Sollzeit.</p>
+    }
+  </div>
+  <button class="btn tonal" type="button" (click)="newPlan()"><app-icon name="add" [size]="18" /> Neuer Arbeitsplan</button>
+
+  <!-- Überstunden -->
+  <h3 class="section-title">Überstunden</h3>
+  <div class="card">
+    <div class="row nowrap">
+      <span class="grow">Saldo bis gestern</span>
+      <b class="num" [class.pos]="calc.overtime() > 0" [class.neg]="calc.overtime() < 0">{{ calc.overtime() | dur: true }}</b>
+    </div>
+    <p class="muted-text small">
+      Gezählt ab Beginn des ersten Arbeitsplans{{ calc.trackingStart() ? ' (' + (calc.trackingStart() | day) + ')' : '' }}.
+      Korrekturen z. B. für Startsaldo oder Auszahlungen.
+    </p>
+  </div>
+  @if (adjustments().length) {
+    <div class="list">
+      @for (a of adjustments(); track a.id) {
+        <button class="list-item" type="button" (click)="editAdjustment(a)">
+          <span class="main">
+            <span class="title">{{ a.note || 'Korrektur' }}</span>
+            <span class="supporting">{{ a.date | day }}</span>
+          </span>
+          <span class="trailing num" [class.pos]="a.minutes > 0" [class.neg]="a.minutes < 0">{{ a.minutes | dur: true }}</span>
+        </button>
+      }
+    </div>
+  }
+  <button class="btn tonal" type="button" (click)="newAdjustment()"><app-icon name="add" [size]="18" /> Korrektur</button>
+
+  <!-- Pausen -->
+  <h3 class="section-title">Pausen-Button</h3>
+  <div class="card form-grid">
+    <div class="field">
+      <label for="lunch-s">Beginn</label>
+      <input id="lunch-s" type="time" [ngModel]="s().lunchStart" (ngModelChange)="update({ lunchStart: $event })" />
+    </div>
+    <div class="field">
+      <label for="lunch-e">Ende</label>
+      <input id="lunch-e" type="time" [ngModel]="s().lunchEnd" (ngModelChange)="update({ lunchEnd: $event })" />
+    </div>
+  </div>
+
+  <!-- Urlaub & Feiertage -->
+  <h3 class="section-title">Urlaub &amp; Feiertage</h3>
+  <div class="card col">
+    <div class="field">
+      <label for="vac">Urlaubstage pro Jahr</label>
+      <input id="vac" type="number" inputmode="decimal" min="0" [ngModel]="s().vacationDaysPerYear" (ngModelChange)="update({ vacationDaysPerYear: num($event, 30) })" />
+    </div>
+    <label class="switch-row">
+      <span class="main"><span>Resturlaub übertragen</span><span class="supporting">Übrige Tage ins Folgejahr mitnehmen</span></span>
+      <input type="checkbox" [ngModel]="s().vacationCarryOver" (ngModelChange)="update({ vacationCarryOver: $event })" />
+    </label>
+    <div class="field">
+      <label for="state">Bundesland (gesetzliche Feiertage)</label>
+      <select id="state" [ngModel]="s().state" (ngModelChange)="update({ state: $event })">
+        @for (st of states; track st.code) {
+          <option [value]="st.code">{{ st.name }}</option>
+        }
+      </select>
+    </div>
+  </div>
+
+  <!-- Arbeitsorte -->
+  <h3 class="section-title">Arbeitsorte</h3>
+  <div class="card col">
+    <label class="switch-row">
+      <span class="main">
+        <span>Automatisch per Standort</span>
+        <span class="supporting">Beim Einstempeln: im Büro-Radius → Büro, sonst Homeoffice</span>
+      </span>
+      <input type="checkbox" [ngModel]="s().autoLocation" (ngModelChange)="update({ autoLocation: $event })" />
+    </label>
+    <div class="field">
+      <label>Standard, wenn kein Standort verfügbar</label>
+      <div class="segmented">
+        <button type="button" [class.on]="s().defaultPlace === 'homeoffice'" (click)="update({ defaultPlace: 'homeoffice' })">
+          <app-icon name="home" [size]="18" /> Homeoffice
+        </button>
+        <button type="button" [class.on]="s().defaultPlace === 'buero'" (click)="update({ defaultPlace: 'buero' })">
+          <app-icon name="office" [size]="18" /> Büro
+        </button>
+      </div>
+    </div>
+  </div>
+  <div class="list">
+    @for (o of s().offices; track o.id) {
+      <button class="list-item" type="button" (click)="officeEdit.set({ ...o })">
+        <span class="avatar"><app-icon name="office" [size]="20" /></span>
+        <span class="main">
+          <span class="title">{{ o.name }}</span>
+          <span class="supporting num">{{ o.lat.toFixed(5) }}, {{ o.lon.toFixed(5) }} · {{ o.radius }} m</span>
+        </span>
+        <app-icon name="chevron_right" />
+      </button>
+    } @empty {
+      <p class="empty">Kein Büro-Standort hinterlegt.</p>
+    }
+  </div>
+  <div class="row">
+    <button class="btn tonal grow" type="button" (click)="newOffice()"><app-icon name="add" [size]="18" /> Büro-Standort</button>
+    <button class="btn outlined grow" type="button" (click)="testLocation()" [disabled]="geo.busy()">
+      <app-icon name="my_location" [size]="18" /> {{ geo.busy() ? 'Suche …' : 'Testen' }}
+    </button>
+  </div>
+  @if (locTest(); as r) {
+    <div class="card filled small-text">
+      <b>{{ placeLabels[r.place] }}</b>
+      @if (r.located) {
+        – {{ r.distance! | num }} m bis {{ r.office?.name }} (Genauigkeit ±{{ r.accuracy! | num }} m)
+      } @else {
+        – {{ r.error }} (Standard verwendet)
+      }
+    </div>
+  }
+
+  <!-- Kalender -->
+  <h3 class="section-title">Kalender</h3>
+  <div class="card col">
+    <p class="muted-text small" style="margin: 0">
+      Ohne Einrichtung: Abwesenheiten per Kalender-Symbol einzeln in Google Kalender anlegen oder als .ics teilen.
+      Für echte Synchronisation (anlegen, ändern, löschen) eine OAuth-Client-ID (Typ „Webanwendung“, Calendar API aktiviert,
+      diese App-Adresse als JavaScript-Ursprung) aus der Google Cloud Console eintragen.
+    </p>
+    <div class="field">
+      <label for="gcid">Google OAuth-Client-ID</label>
+      <input id="gcid" type="text" autocomplete="off" placeholder="…apps.googleusercontent.com" [ngModel]="s().googleClientId" (ngModelChange)="update({ googleClientId: $event.trim() })" />
+    </div>
+    <div class="field">
+      <label for="gcal">Kalender-ID</label>
+      <input id="gcal" type="text" autocomplete="off" [ngModel]="s().googleCalendarId" (ngModelChange)="update({ googleCalendarId: $event.trim() || 'primary' })" />
+      <span class="hint">„primary“ = Hauptkalender, oder ID eines eigenen Kalenders</span>
+    </div>
+    <label class="switch-row">
+      <span class="main"><span>Feiertage mit exportieren</span><span class="supporting">Nur manuell eingetragene (z. B. Heiligabend)</span></span>
+      <input type="checkbox" [ngModel]="s().calendarIncludeHolidays" (ngModelChange)="update({ calendarIncludeHolidays: $event })" />
+    </label>
+  </div>
+
+  <!-- Darstellung -->
+  <h3 class="section-title">Darstellung</h3>
+  <div class="segmented">
+    <button type="button" [class.on]="s().theme === 'system'" (click)="update({ theme: 'system' })">System</button>
+    <button type="button" [class.on]="s().theme === 'light'" (click)="update({ theme: 'light' })">Hell</button>
+    <button type="button" [class.on]="s().theme === 'dark'" (click)="update({ theme: 'dark' })">Dunkel</button>
+  </div>
+
+  <!-- Daten -->
+  <h3 class="section-title">Daten &amp; Backup</h3>
+  <div class="card col">
+    <p class="muted-text small" style="margin: 0">
+      {{ counts().work }} Arbeitsblöcke · {{ counts().absences }} Abwesenheiten · {{ counts().uni }} Uni-Einträge – alles nur lokal auf diesem Gerät.
+    </p>
+    <button class="btn block" type="button" (click)="exportData()"><app-icon name="download" [size]="18" /> Backup exportieren</button>
+    <label class="btn tonal block">
+      <app-icon name="upload" [size]="18" /> Backup importieren
+      <input type="file" accept="application/json,.json" hidden (change)="importFile($event)" />
+    </label>
+    <p class="muted-text small" style="margin: 0">Unterstützt eigene Backups und das JSON-Backup der bisherigen Stempeluhr-App (StempelUhrDataBackup…json).</p>
+    <button class="btn danger block" type="button" (click)="resetAll()"><app-icon name="delete" [size]="18" /> Alle Daten löschen</button>
+  </div>
+
+  <p class="muted-text small center">Stempeluhr {{ version }}</p>
+</div>
+
+<!-- Sheets -->
+@if (planEdit(); as p) {
+  <app-sheet title="Arbeitsplan" (closed)="planEdit.set(null)">
+    <div class="field">
+      <label for="plan-from">Gültig ab</label>
+      <input id="plan-from" type="date" [ngModel]="p.validFrom" (ngModelChange)="planEdit.set({ ...p, validFrom: $event })" />
+    </div>
+    <div class="hours">
+      @for (d of wd; track d; let i = $index) {
+        <div class="field">
+          <label [for]="'h' + i">{{ d }}</label>
+          <input [id]="'h' + i" type="number" inputmode="decimal" min="0" max="24" step="0.25" [ngModel]="p.hours[i]" (ngModelChange)="setPlanHour(i, $event)" />
+        </div>
+      }
+    </div>
+    <p class="muted-text">Summe: <b>{{ planTotal(p) | num }} h</b> pro Woche</p>
+    <ng-container actions>
+      @if (planExists(p.id)) {
+        <button class="btn text" type="button" (click)="deletePlan()"><app-icon name="delete" [size]="18" /></button>
+      }
+      <span class="spacer"></span>
+      <button class="btn text" type="button" (click)="planEdit.set(null)">Abbrechen</button>
+      <button class="btn" type="button" (click)="savePlan()">Speichern</button>
+    </ng-container>
+  </app-sheet>
+}
+
+@if (adjEdit(); as a) {
+  <app-sheet title="Überstunden-Korrektur" (closed)="adjEdit.set(null)">
+    <div class="form-grid">
+      <div class="field">
+        <label for="adj-d">Datum</label>
+        <input id="adj-d" type="date" [ngModel]="a.date" (ngModelChange)="patchAdj({ date: $event })" />
+      </div>
+      <div class="field">
+        <label for="adj-v">Stunden</label>
+        <input id="adj-v" type="text" inputmode="text" placeholder="+2:30 / -1:00" [ngModel]="a.value" (ngModelChange)="patchAdj({ value: $event })" />
+      </div>
+      <div class="field full">
+        <label for="adj-n">Notiz</label>
+        <input id="adj-n" type="text" placeholder="z. B. Startsaldo, Auszahlung" [ngModel]="a.note" (ngModelChange)="patchAdj({ note: $event })" />
+      </div>
+    </div>
+    <ng-container actions>
+      <button class="btn text" type="button" (click)="deleteAdjustment()"><app-icon name="delete" [size]="18" /></button>
+      <span class="spacer"></span>
+      <button class="btn text" type="button" (click)="adjEdit.set(null)">Abbrechen</button>
+      <button class="btn" type="button" (click)="saveAdjustment()">Speichern</button>
+    </ng-container>
+  </app-sheet>
+}
+
+@if (officeEdit(); as o) {
+  <app-sheet title="Büro-Standort" (closed)="officeEdit.set(null)">
+    <div class="form-grid">
+      <div class="field full">
+        <label for="of-n">Name</label>
+        <input id="of-n" type="text" [ngModel]="o.name" (ngModelChange)="patchOffice({ name: $event })" />
+      </div>
+      <div class="field">
+        <label for="of-lat">Breitengrad</label>
+        <input id="of-lat" type="number" inputmode="decimal" step="0.00001" [ngModel]="o.lat" (ngModelChange)="patchOffice({ lat: num($event) })" />
+      </div>
+      <div class="field">
+        <label for="of-lon">Längengrad</label>
+        <input id="of-lon" type="number" inputmode="decimal" step="0.00001" [ngModel]="o.lon" (ngModelChange)="patchOffice({ lon: num($event) })" />
+      </div>
+      <div class="field full">
+        <label for="of-r">Radius: {{ o.radius }} m</label>
+        <input id="of-r" type="range" min="50" max="1000" step="10" [ngModel]="o.radius" (ngModelChange)="patchOffice({ radius: num($event, 150) })" />
+      </div>
+    </div>
+    <button class="btn outlined" type="button" (click)="useCurrentPosition()" [disabled]="geo.busy()">
+      <app-icon name="my_location" [size]="18" /> Aktuellen Standort übernehmen
+    </button>
+    <ng-container actions>
+      <button class="btn text" type="button" (click)="deleteOffice()"><app-icon name="delete" [size]="18" /></button>
+      <span class="spacer"></span>
+      <button class="btn text" type="button" (click)="officeEdit.set(null)">Abbrechen</button>
+      <button class="btn" type="button" (click)="saveOffice()">Speichern</button>
+    </ng-container>
+  </app-sheet>
+}

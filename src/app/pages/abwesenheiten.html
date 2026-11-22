@@ -1,0 +1,129 @@
+<header class="topbar">
+  <h1>Abwesenheiten</h1>
+  <button class="icon-btn" type="button" (click)="calendarSheet.set(true)" aria-label="Kalender"><app-icon name="sync" /></button>
+</header>
+
+<div class="content">
+  <div class="row nowrap">
+    <button class="icon-btn" type="button" (click)="year.set(year() - 1)" aria-label="Vorjahr"><app-icon name="chevron_left" /></button>
+    <span class="grow" style="text-align: center; font-weight: 500">{{ year() }}</span>
+    <button class="icon-btn" type="button" (click)="year.set(year() + 1)" aria-label="Folgejahr"><app-icon name="chevron_right" /></button>
+  </div>
+
+  <section class="card tertiary vac">
+    <h2>Urlaub {{ year() }}</h2>
+    <div class="row nowrap">
+      <span class="big num">{{ vac().remaining | num }}</span>
+      <span class="grow">Tage übrig</span>
+    </div>
+    <div class="progress">
+      <div class="bar2">
+        <div [style.width.%]="vacPct(vac().taken)" style="background: var(--tertiary)"></div>
+        <div class="planned" [style.width.%]="vacPct(vac().planned)"></div>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="stat">
+        <span class="label">Anspruch</span>
+        <span class="value">{{ vac().entitlement | num }}</span>
+        @if (vac().carry) {
+          <span class="label">inkl. {{ vac().carry | num }} Übertrag</span>
+        }
+      </div>
+      <div class="stat">
+        <span class="label">Genommen</span>
+        <span class="value">{{ vac().taken | num }}</span>
+      </div>
+      <div class="stat">
+        <span class="label">Geplant</span>
+        <span class="value">{{ vac().planned | num }}</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="stats">
+    <div class="card stat">
+      <span class="label">Krank</span>
+      <span class="value">{{ other().krank.taken + other().krank.planned | num }}</span>
+    </div>
+    <div class="card stat">
+      <span class="label">Sonderurlaub</span>
+      <span class="value">{{ other().sonder.taken + other().sonder.planned | num }}</span>
+    </div>
+    <div class="card stat">
+      <span class="label">Abbau</span>
+      <span class="value">{{ other().abbau.taken + other().abbau.planned | num }}</span>
+    </div>
+  </div>
+
+  <div class="chips">
+    <button class="chip" type="button" [class.on]="showHolidays()" (click)="showHolidays.set(!showHolidays())">
+      @if (showHolidays()) {
+        <app-icon name="check" [size]="18" />
+      }
+      Feiertage ({{ settings().state }})
+    </button>
+  </div>
+
+  @if (upcoming().length) {
+    <h3 class="section-title">Anstehend</h3>
+    <div class="list">
+      @for (r of upcoming(); track r.id) {
+        <ng-container *ngTemplateOutlet="row; context: { $implicit: r }" />
+      }
+    </div>
+  }
+  @if (past().length) {
+    <h3 class="section-title">Vergangen</h3>
+    <div class="list">
+      @for (r of past(); track r.id) {
+        <ng-container *ngTemplateOutlet="row; context: { $implicit: r }" />
+      }
+    </div>
+  }
+  @if (!rows().length) {
+    <p class="empty">Keine Abwesenheiten in {{ year() }}.</p>
+  }
+</div>
+
+<ng-template #row let-r>
+  <div class="list-item" [class.muted]="r.past" (click)="r.absence && editing.set(r.absence)">
+    <span class="avatar" [class]="r.type"><app-icon [name]="iconOf(r.type)" [size]="20" /></span>
+    <span class="main">
+      <span class="title">{{ r.title }}</span>
+      <span class="supporting">{{ r.range }} · {{ r.days | num }} {{ r.days === 1 ? 'Tag' : 'Tage' }}{{ r.note ? ' · ' + r.note : '' }}</span>
+    </span>
+    @if (r.absence) {
+      <a class="icon-btn cal-btn" [class.synced]="r.synced" [href]="link(r.absence)" target="_blank" rel="noopener" (click)="$event.stopPropagation(); markAdded(r.absence)" aria-label="Zu Google Kalender hinzufügen">
+        <app-icon [name]="r.synced ? 'check' : 'calendar_add'" [size]="22" />
+      </a>
+    }
+  </div>
+</ng-template>
+
+<button class="fab" type="button" (click)="editing.set(null)"><app-icon name="add" /> Eintragen</button>
+
+@if (editing() !== undefined) {
+  <app-absence-editor [absence]="editing() ?? null" (closed)="editing.set(undefined)" />
+}
+
+@if (calendarSheet()) {
+  <app-sheet title="Kalender" (closed)="calendarSheet.set(false)">
+    <p class="sheet-text">
+      Einzelne Abwesenheiten lassen sich über das Kalender-Symbol direkt in Google Kalender anlegen. Für alle auf einmal:
+    </p>
+    @if (settings().googleClientId) {
+      <button class="btn block" type="button" (click)="syncGoogle()" [disabled]="gsync.busy()">
+        <app-icon name="sync" [size]="18" /> {{ gsync.busy() ? 'Synchronisiere …' : 'Mit Google Kalender synchronisieren' }}
+      </button>
+    }
+    <button class="btn tonal block" type="button" (click)="exportIcs(true)"><app-icon name="share" [size]="18" /> Anstehende als .ics teilen</button>
+    <button class="btn outlined block" type="button" (click)="exportIcs(false)"><app-icon name="download" [size]="18" /> Alle als .ics exportieren</button>
+    <p class="sheet-text">
+      Die .ics-Datei nutzt feste IDs – ein erneuter Import aktualisiert Termine statt sie zu duplizieren.
+      @if (!settings().googleClientId) {
+        Für automatische Synchronisation (inkl. Löschen) eine Google-Client-ID unter <a routerLink="/einstellungen" (click)="calendarSheet.set(false)">Mehr → Kalender</a> hinterlegen.
+      }
+    </p>
+  </app-sheet>
+}

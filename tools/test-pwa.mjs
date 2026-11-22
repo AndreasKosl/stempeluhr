@@ -1,0 +1,17 @@
+import { launch, shot } from './pixel.mjs';
+const BASE = 'http://localhost:8080';
+const { browser, context, page, errors } = await launch();
+await page.goto(`${BASE}/`);
+await page.waitForFunction(() => navigator.serviceWorker?.controller || navigator.serviceWorker?.ready, null, { timeout: 40000 });
+await page.evaluate(() => navigator.serviceWorker.ready);
+await page.reload();
+await page.waitForFunction(() => !!navigator.serviceWorker.controller, null, { timeout: 40000 });
+const manifest = await page.evaluate(async () => (await fetch('manifest.webmanifest')).json());
+console.log('SW aktiv:', await page.evaluate(() => !!navigator.serviceWorker.controller), '| Manifest:', manifest.name, manifest.icons.length, 'Icons');
+await context.setOffline(true);
+await page.goto(`${BASE}/#/uebersicht`);
+await page.waitForTimeout(800);
+console.log('Offline geladen:', await page.locator('h1').first().innerText());
+await shot(page, '21-offline');
+console.log('Errors:', errors.filter((e) => !/ERR_INTERNET_DISCONNECTED/.test(e)));
+await browser.close();

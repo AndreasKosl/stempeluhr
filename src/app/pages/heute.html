@@ -1,0 +1,148 @@
+<header class="topbar">
+  <h1>Stempeluhr<span class="sub">{{ t().key | day: 'long' }}</span></h1>
+  <a class="icon-btn" [routerLink]="['/tag', t().key]" aria-label="Tag bearbeiten"><app-icon name="edit" /></a>
+</header>
+
+<div class="content">
+  <section class="hero card" [class]="status()">
+    @if (t().absenceType; as at) {
+      <div class="row center">
+        <span class="badge" [class]="at">{{ t().holiday ?? absenceLabels[at] }}{{ t().absence?.halfDay ? ' (½)' : '' }}</span>
+      </div>
+    }
+    <div class="ring">
+      <svg viewBox="0 0 240 240" aria-hidden="true">
+        <circle class="track" cx="120" cy="120" [attr.r]="R" />
+        @if (progress() > 0) {
+          <circle class="bar" cx="120" cy="120" [attr.r]="R" [attr.stroke-dasharray]="dash()" />
+        }
+      </svg>
+      <div class="center-text">
+        <span class="state">
+          @switch (status()) {
+            @case ('work') { Arbeitet seit {{ calc.runningWork()!.start | hm }} }
+            @case ('pause') { Pause seit {{ calc.runningPause()!.start | hm }} }
+            @default { Nicht eingestempelt }
+          }
+        </span>
+        <span class="clock num">{{ clockText() }}</span>
+        <span class="target">von {{ t().targetMin | dur }} h Soll</span>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat">
+        <span class="label">Rest</span>
+        <span class="value">{{ remaining() | dur }}</span>
+      </div>
+      <div class="stat">
+        <span class="label">Pause</span>
+        <span class="value">{{ t().pauseMin | dur }}</span>
+      </div>
+      <div class="stat">
+        <span class="label">Feierabend</span>
+        <span class="value">{{ endEstimate() ? (endEstimate() | hm) : '–' }}</span>
+      </div>
+    </div>
+
+    @if (calc.runningWork(); as w) {
+      <div class="row center place-row">
+        <button class="chip on" type="button" (click)="togglePlace()" aria-label="Arbeitsort wechseln">
+          <app-icon [name]="w.place === 'buero' ? 'office' : 'home'" [size]="18" />
+          {{ w.place ? placeLabels[w.place] : 'Ort?' }}
+          @if (w.placeAuto) {
+            <app-icon name="my_location" [size]="14" />
+          }
+        </button>
+        <button class="icon-btn small" type="button" (click)="relocate()" [disabled]="geo.busy()" aria-label="Standort neu bestimmen">
+          <app-icon name="location" [size]="20" [class.spin]="geo.busy()" />
+        </button>
+      </div>
+    }
+  </section>
+
+  <div class="actions">
+    @switch (status()) {
+      @case ('idle') {
+        <button class="btn big block start" type="button" (click)="track.startWork()">
+          <app-icon name="play" /> Einstempeln
+        </button>
+      }
+      @case ('work') {
+        <button class="btn big tonal grow" type="button" (click)="track.pause()"><app-icon name="pause" /> Pause</button>
+        <button class="btn big grow stop" type="button" (click)="track.stop()"><app-icon name="stop" /> Ausstempeln</button>
+      }
+      @case ('pause') {
+        <button class="btn big grow start" type="button" (click)="track.resume()"><app-icon name="play" /> Weiter</button>
+        <button class="btn big tonal grow" type="button" (click)="track.stop()"><app-icon name="stop" /> Ausstempeln</button>
+      }
+    }
+  </div>
+
+  <button class="btn outlined big block lunch" type="button" (click)="track.addLunch()" [disabled]="lunchDone()">
+    <app-icon [name]="lunchDone() ? 'check' : 'lunch'" />
+    {{ lunchDone() ? 'Mittagspause eingetragen' : 'Pause ' + settings().lunchStart + '–' + settings().lunchEnd + ' eintragen' }}
+  </button>
+
+  <div class="stats two">
+    <a class="card stat-card" routerLink="/uebersicht">
+      <span class="label">Überstunden</span>
+      <span class="value num" [class.pos]="calc.overtimeLive() > 0" [class.neg]="calc.overtimeLive() < 0">
+        {{ calc.overtimeLive() | dur: true }}
+      </span>
+      <span class="label">bis gestern {{ calc.overtime() | dur: true }}</span>
+    </a>
+    <a class="card stat-card" routerLink="/uebersicht">
+      <span class="label">Diese Woche</span>
+      <span class="value num">{{ week().worked | dur }}</span>
+      <span class="label">
+        von {{ week().target | dur }} ·
+        <span [class.pos]="week().diff > 0" [class.neg]="week().diff < 0">{{ week().diff | dur: true }}</span>
+      </span>
+    </a>
+  </div>
+
+  <div class="card week">
+    @for (d of week().days; track d.key) {
+      <a class="col" [routerLink]="['/tag', d.key]" [class.today]="d.key === t().key">
+        <div class="bars">
+          <div class="plan" [style.height.%]="(d.plannedMin / week().max) * 100"></div>
+          <div class="done" [class]="d.absenceType ?? ''" [style.height.%]="((d.absenceType && !d.workedMin ? d.plannedMin - d.targetMin : d.workedMin) / week().max) * 100"></div>
+        </div>
+        <span class="wd">{{ d.key | day: 'wd' }}</span>
+        <span class="ic">
+          @if (d.place) {
+            <app-icon [name]="d.place === 'buero' ? 'office' : 'home'" [size]="14" />
+          }
+        </span>
+      </a>
+    }
+  </div>
+
+  <div class="row">
+    <h3 class="section-title grow">Heutige Einträge</h3>
+    <button class="btn text" type="button" (click)="editing.set(null)"><app-icon name="add" [size]="18" /> Hinzufügen</button>
+  </div>
+  @if (entries().length) {
+    <div class="list">
+      @for (e of entries(); track e.id) {
+        <button class="list-item" type="button" (click)="editing.set(e)">
+          <span class="avatar" [class]="e.kind"><app-icon [name]="e.kind === 'pause' ? 'lunch' : e.place === 'buero' ? 'office' : 'home'" [size]="20" /></span>
+          <span class="main">
+            <span class="title num">{{ e.start | hm }} – {{ e.end ? (e.end | hm) : 'läuft' }}</span>
+            <span class="supporting">
+              {{ e.kind === 'pause' ? 'Pause' : e.place ? placeLabels[e.place] : 'Arbeit' }}{{ e.note ? ' · ' + e.note : '' }}
+            </span>
+          </span>
+          <span class="trailing num">{{ entryMin(e) | dur }}</span>
+        </button>
+      }
+    </div>
+  } @else {
+    <p class="empty">Heute noch nichts erfasst.</p>
+  }
+</div>
+
+@if (editing() !== undefined) {
+  <app-entry-editor [entry]="editing() ?? null" [day]="t().key" (closed)="editing.set(undefined)" />
+}
