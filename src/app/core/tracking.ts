@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { Calc } from './calc';
 import { fmtDuration, nowMinute, nowMs, timeToTs, todayKey } from './date-utils';
 import { Geo } from './geo';
-import { PLACE_LABELS } from './models';
+import { PLACE_LABELS, Place } from './models';
 import { Store } from './store';
 import { Ui } from './ui';
 
@@ -14,10 +14,15 @@ export class Tracking {
   private geo = inject(Geo);
   private ui = inject(Ui);
 
-  async startWork() {
+  /** @param place fester Arbeitsort (z. B. vom MacroDroid-Geofence) – überspringt die GPS-Erkennung */
+  async startWork(place?: Place) {
     if (this.calc.runningWork()) return;
     const s = this.store.data().settings;
-    const entry = this.store.addEntry({ kind: 'work', start: nowMinute(), end: null, place: s.defaultPlace, placeAuto: false });
+    const entry = this.store.addEntry({ kind: 'work', start: nowMinute(), end: null, place: place ?? s.defaultPlace, placeAuto: false });
+    if (place) {
+      this.ui.show(`Eingestempelt · ${PLACE_LABELS[place]}`);
+      return;
+    }
     if (!s.autoLocation) {
       this.ui.show(`Eingestempelt · ${PLACE_LABELS[s.defaultPlace]}`);
       return;
