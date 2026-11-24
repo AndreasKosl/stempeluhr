@@ -19,6 +19,8 @@
     { "src": "icons/monochrome-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "monochrome" }
   ],
   "shortcuts": [
+    { "name": "Einstempeln", "short_name": "Kommen", "url": "./#/stempeln/kommen", "icons": [{ "src": "icons/icon-192x192.png", "sizes": "192x192" }] },
+    { "name": "Ausstempeln", "short_name": "Gehen", "url": "./#/stempeln/gehen", "icons": [{ "src": "icons/icon-192x192.png", "sizes": "192x192" }] },
     { "name": "Heute", "short_name": "Heute", "url": "./#/heute", "icons": [{ "src": "icons/icon-192x192.png", "sizes": "192x192" }] },
     { "name": "Übersicht", "short_name": "Übersicht", "url": "./#/uebersicht", "icons": [{ "src": "icons/icon-192x192.png", "sizes": "192x192" }] },
     { "name": "Uni", "short_name": "Uni", "url": "./#/uni", "icons": [{ "src": "icons/icon-192x192.png", "sizes": "192x192" }] }
