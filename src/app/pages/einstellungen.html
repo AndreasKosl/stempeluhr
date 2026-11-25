@@ -181,8 +181,21 @@
     <button class="btn danger block" type="button" (click)="resetAll()"><app-icon name="delete" [size]="18" /> Alle Daten löschen</button>
   </div>
 
+  <!-- App -->
+  <h3 class="section-title">App</h3>
+  <div class="card col">
+    <p class="muted-text small" style="margin: 0">Installierte Version: {{ version }}</p>
+    @if (updates.ready()) {
+      <button class="btn block" type="button" (click)="updates.reload()"><app-icon name="sync" [size]="18" /> Neue Version laden</button>
+    } @else {
+      <button class="btn tonal block" type="button" [disabled]="updates.checking()" (click)="updates.check()">
+        <app-icon name="sync" [size]="18" /> {{ updates.checking() ? 'Suche …' : 'Nach Updates suchen' }}
+      </button>
+    }
+  </div>
+
   <p class="muted-text small center">
-    Stempeluhr {{ version }} · <a href="3rdpartylicenses.txt" target="_blank" rel="noopener">Open-Source-Lizenzen</a>
+    Stempeluhr · <a href="3rdpartylicenses.txt" target="_blank" rel="noopener">Open-Source-Lizenzen</a>
   </p>
 </div>
 

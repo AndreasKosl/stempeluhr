@@ -26,8 +26,10 @@ jobs:
       - run: npm ci
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
+      # Versionsanzeige in "Mehr": Commit-Datum + Kurz-Hash, z. B. "25.11.2026 · cf97605"
+      - run: echo "APP_VERSION=$(git log -1 --format=%cd --date=format:%d.%m.%Y) · $(git rev-parse --short HEAD)" >> "$GITHUB_ENV"
       # Seite liegt unter https://<user>.github.io/<repo>/
-      - run: npx ng build --base-href "/${{ github.event.repository.name }}/"
+      - run: npx ng build --base-href "/${{ github.event.repository.name }}/" --define "BUILD_VERSION='${APP_VERSION}'"
       # Lizenzen der gebündelten Pakete mit ausliefern (Link in den Einstellungen)
       - run: cp dist/stempeluhr/3rdpartylicenses.txt dist/stempeluhr/browser/
       - uses: actions/upload-pages-artifact@v5

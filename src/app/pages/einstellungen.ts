@@ -9,6 +9,7 @@ import { STATES } from '../core/holidays';
 import { OfficeLocation, OvertimeAdjustment, PLACE_LABELS, Settings, WorkPlan, emptyData, uid } from '../core/models';
 import { Store } from '../core/store';
 import { Ui } from '../core/ui';
+import { APP_VERSION, Updates } from '../core/updates';
 import { Icon } from '../shared/icon';
 import { DayPipe, DurPipe, NumPipe } from '../shared/pipes';
 import { Sheet } from '../shared/sheet';
@@ -31,7 +32,8 @@ export class EinstellungenPage {
   protected readonly states = STATES;
   protected readonly wd = WD;
   protected readonly placeLabels = PLACE_LABELS;
-  protected readonly version = '1.0.0';
+  protected readonly version = APP_VERSION;
+  protected updates = inject(Updates);
 
   protected s = computed(() => this.store.data().settings);
   protected plans = computed(() => [...this.calc.plans()].reverse());
