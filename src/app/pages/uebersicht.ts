@@ -66,6 +66,13 @@ export class UebersichtPage {
     return this.calc.range(a, b, now);
   });
 
+  /** Saldo am Ende des gewählten Zeitraums (bzw. live, wenn der Zeitraum heute einschließt) */
+  protected saldo = computed(() => {
+    const end = this.bounds()[1];
+    const past = end < this.clock.today();
+    return { value: this.calc.balanceAt(end), label: past ? `Saldo ${fmtDate(end).slice(0, 6)}` : 'Saldo' };
+  });
+
   protected weeks = computed<WeekGroup[]>(() => {
     const groups: WeekGroup[] = [];
     for (const d of this.summary().days) {

@@ -185,25 +185,38 @@ export class Calc {
     };
   }
 
-  /** Überstunden bis einschließlich gestern (ohne Korrekturen) */
-  private readonly balanceUntilYesterday = computed(() => {
+  /** Summe der Tagesdifferenzen ab Trackingbeginn bis einschließlich `to` (ohne Korrekturen) */
+  private diffUntil(to: string): number {
     const start = this.trackingStart();
     if (!start) return 0;
-    const yesterday = addDays(this.clock.today(), -1);
     let sum = 0;
-    for (let k = start; k <= yesterday; k = addDays(k, 1)) sum += this.day(k).diffMin;
+    for (let k = start; k <= to; k = addDays(k, 1)) sum += this.day(k).diffMin;
     return sum;
-  });
+  }
 
-  readonly adjustmentsTotal = computed(() =>
-    this.store
+  private adjustmentsUntil(to: string): number {
+    return this.store
       .data()
-      .adjustments.filter((a) => a.date <= this.clock.today())
-      .reduce((s, a) => s + a.minutes, 0),
-  );
+      .adjustments.filter((a) => a.date <= to)
+      .reduce((s, a) => s + a.minutes, 0);
+  }
+
+  /** Überstunden bis einschließlich gestern (ohne Korrekturen) */
+  private readonly balanceUntilYesterday = computed(() => this.diffUntil(addDays(this.clock.today(), -1)));
+
+  readonly adjustmentsTotal = computed(() => this.adjustmentsUntil(this.clock.today()));
 
   /** Überstundensaldo bis gestern inkl. Korrekturen */
   readonly overtime = computed(() => this.balanceUntilYesterday() + this.adjustmentsTotal());
+
+  /**
+   * Saldo am Ende des Tages `key` inkl. Korrekturen.
+   * Für heute oder spätere Tage: aktueller Live-Saldo.
+   */
+  balanceAt(key: string): number {
+    if (key >= this.clock.today()) return this.overtimeLive();
+    return this.diffUntil(key) + this.adjustmentsUntil(key);
+  }
 
   /** Live-Werte für heute */
   readonly today = computed(() => this.day(this.clock.today(), this.clock.now()));

@@ -35,7 +35,7 @@
       <span class="badge"><app-icon name="office" [size]="14" /> {{ summary().buero }} Büro</span>
       <span class="badge"><app-icon name="home" [size]="14" /> {{ summary().ho }} Homeoffice</span>
       <span class="spacer"></span>
-      <span class="saldo">Saldo <b [class.pos]="calc.overtimeLive() > 0" [class.neg]="calc.overtimeLive() < 0">{{ calc.overtimeLive() | dur: true }}</b></span>
+      <span class="saldo">{{ saldo().label }} <b [class.pos]="saldo().value > 0" [class.neg]="saldo().value < 0">{{ saldo().value | dur: true }}</b></span>
     </div>
   </section>
 
