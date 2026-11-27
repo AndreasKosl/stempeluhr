@@ -3,7 +3,7 @@
   <button class="btn text" type="button" (click)="anchor.set(calc.today().key)">Heute</button>
 </header>
 
-<div class="content">
+<div class="content" appSwipe (swipe)="move($event)">
   <div class="segmented">
     <button type="button" [class.on]="mode() === 'woche'" (click)="setMode('woche')">Woche</button>
     <button type="button" [class.on]="mode() === 'monat'" (click)="setMode('monat')">Monat</button>

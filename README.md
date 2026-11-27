@@ -10,7 +10,7 @@ Alle Daten bleiben lokal im Browser (localStorage) – Backups als JSON exportie
 - **Heute**: Einstempeln / Pause / Weiter / Ausstempeln, Live-Ring mit Soll, Rest und voraussichtlichem Feierabend
 - **Pausen-Button**: trägt mit einem Tipp die Pause 11:30–12:00 ein (Zeiten in den Einstellungen änderbar)
 - **Arbeitsort automatisch**: beim Einstempeln per GPS – im Radius eines Büro-Standorts → Büro, sonst Homeoffice (manuell umschaltbar)
-- **Übersicht**: Woche / Monat / Jahr mit Ist, Soll, Differenz, Büro- und Homeoffice-Tagen
+- **Übersicht**: Woche / Monat / Jahr mit Ist, Soll, Differenz, Büro- und Homeoffice-Tagen; nach links/rechts wischen blättert zum nächsten/vorherigen Zeitraum
 - **Überstunden**: Saldo ab Beginn des ersten Arbeitsplans, plus manuelle Korrekturen
 - **Arbeitsplan**: Sollstunden je Wochentag, mehrere Pläne mit „gültig ab“
 - **Abwesenheiten**: Urlaub, Krankheit, Sonderurlaub, Feiertag, Überstundenabbau, halbe Tage; Urlaubskonto mit Übertrag;

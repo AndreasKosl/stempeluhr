@@ -6,6 +6,7 @@ import { addDays, addMonths, endOfMonth, fmtDate, fmtMonth, fmtMonthShort, isoWe
 import { ABSENCE_LABELS } from '../core/models';
 import { Icon } from '../shared/icon';
 import { DayPipe, DurPipe, HmPipe, NumPipe } from '../shared/pipes';
+import { Swipe } from '../shared/swipe';
 
 type Mode = 'woche' | 'monat' | 'jahr';
 
@@ -20,7 +21,7 @@ const MODE_KEY = 'stempeluhr.uebersicht.mode';
 
 @Component({
   selector: 'app-uebersicht',
-  imports: [Icon, DurPipe, HmPipe, DayPipe, NumPipe, RouterLink],
+  imports: [Icon, DurPipe, HmPipe, DayPipe, NumPipe, RouterLink, Swipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './uebersicht.html',
   styleUrl: './uebersicht.scss',
